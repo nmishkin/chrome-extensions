@@ -203,9 +203,13 @@
 <body>
   <div class="container">
     <h1>Tab Groups Manager</h1>
-    
-    <button class="refresh-btn" id="refreshBtn">🔄 Refresh</button>
-    
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <button class="refresh-btn" id="refreshBtn">🔄 Refresh</button>
+      <button class="refresh-btn" id="collapseAllBtn">📁 Collapse All</button>
+      <button class="refresh-btn" id="expandAllBtn">📂 Expand All</button>
+    </div>
+
     <div class="stats" id="stats">
       <div class="stat">
         <div class="stat-number" id="totalTabs">0</div>

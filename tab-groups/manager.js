@@ -2,6 +2,8 @@ class TabGroupsManager {
   constructor() {
     this.groupsContainer = document.getElementById('groupsContainer');
     this.refreshBtn = document.getElementById('refreshBtn');
+    this.collapseAllBtn = document.getElementById('collapseAllBtn');
+    this.expandAllBtn = document.getElementById('expandAllBtn');
     this.collapsedGroups = new Set();
 
     this.init();
@@ -9,6 +11,8 @@ class TabGroupsManager {
 
   init() {
     this.refreshBtn.addEventListener('click', () => this.loadTabGroups());
+    this.collapseAllBtn.addEventListener('click', () => this.collapseAllGroups());
+    this.expandAllBtn.addEventListener('click', () => this.expandAllGroups());
     this.loadTabGroups();
   }
 
@@ -113,7 +117,7 @@ class TabGroupsManager {
   }
 
   renderTab(tab) {
-    const favicon = tab.favIconUrl || ''; // 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23f1f3f4"/></svg>';
+    const favicon = tab.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23f1f3f4"/></svg>';
 
     return `
       <div class="tab-item">
@@ -148,6 +152,26 @@ class TabGroupsManager {
         const tabId = parseInt(e.target.dataset.tabId);
         this.handleTabAction(action, tabId, e.target);
       });
+    });
+  }
+
+  collapseAllGroups() {
+    const collapseButtons = document.querySelectorAll('.collapse-btn');
+    collapseButtons.forEach(btn => {
+      const groupId = btn.dataset.groupId;
+      if (!this.collapsedGroups.has(groupId)) {
+        this.toggleGroupCollapse(groupId, btn);
+      }
+    });
+  }
+
+  expandAllGroups() {
+    const collapseButtons = document.querySelectorAll('.collapse-btn');
+    collapseButtons.forEach(btn => {
+      const groupId = btn.dataset.groupId;
+      if (this.collapsedGroups.has(groupId)) {
+        this.toggleGroupCollapse(groupId, btn);
+      }
     });
   }
 
