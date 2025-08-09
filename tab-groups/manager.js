@@ -117,7 +117,7 @@ class TabGroupsManager {
   }
 
   renderTab(tab) {
-    const favicon = tab.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23f1f3f4"/></svg>';
+    const favicon = tab.favIconUrl || ''
 
     return `
       <div class="tab-item">
