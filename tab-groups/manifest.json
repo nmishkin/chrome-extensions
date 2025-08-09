@@ -5,7 +5,8 @@
   "description": "View and manage all your tab groups in one place",
   "permissions": [
     "tabs",
-    "tabGroups"
+    "tabGroups",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html",
