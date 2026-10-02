@@ -49,13 +49,22 @@ function writeMessage(handle, obj) {
   handle.writeData(body);
 }
 
+// IDs and names come from separate Apple Events, so a window opening or
+// closing in between could pair a name with the wrong ID. Re-read the IDs
+// afterwards and retry if they changed.
 function getWindowNames() {
   const chrome = Application('Google Chrome');
-  const ids = chrome.windows.id();
-  const names = chrome.windows.name();
-  const map = {};
-  ids.forEach((id, i) => { map[String(id)] = names[i]; });
-  return map;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const ids = chrome.windows.id();
+    const names = chrome.windows.name();
+    const idsAfter = chrome.windows.id();
+    if (names.length === ids.length && idsAfter.join() === ids.join()) {
+      const map = {};
+      ids.forEach((id, i) => { map[String(id)] = names[i]; });
+      return map;
+    }
+  }
+  throw new Error('Chrome windows kept changing while reading names');
 }
 
 function run(argv) {
