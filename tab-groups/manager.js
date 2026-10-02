@@ -1,3 +1,5 @@
+const FALLBACK_FAVICON = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23f1f3f4"/></svg>';
+
 class TabGroupsManager {
   constructor() {
     this.groupsContainer = document.getElementById('groupsContainer');
@@ -165,7 +167,7 @@ class TabGroupsManager {
 
     return `
       <div class="tab-item">
-        <img class="tab-favicon" src="${favicon}" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 16 16&quot;><rect width=&quot;16&quot; height=&quot;16&quot; fill=&quot;%23f1f3f4&quot;/></svg>'">
+        <img class="tab-favicon" src="${favicon}" alt="">
         <div class="tab-info">
           <div class="tab-title">${this.escapeHtml(tab.title)}</div>
           <div class="tab-url">${this.escapeHtml(tab.url)}</div>
@@ -179,6 +181,13 @@ class TabGroupsManager {
   }
 
   attachEventListeners() {
+    // Missing or broken favicons get a plain placeholder
+    document.querySelectorAll('.tab-favicon').forEach(img => {
+      img.addEventListener('error', () => {
+        img.src = FALLBACK_FAVICON;
+      }, { once: true });
+    });
+
     // Collapse/expand functionality
     const collapseButtons = document.querySelectorAll('.collapse-btn');
     collapseButtons.forEach(btn => {
@@ -419,11 +428,13 @@ class TabGroupsManager {
     this.groupsContainer.innerHTML = `
       <div class="empty-state">
         <div style="color: #d93025;">${message}</div>
-        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        <button class="retry-btn" style="margin-top: 10px; padding: 8px 16px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;">
           Retry
         </button>
       </div>
     `;
+    this.groupsContainer.querySelector('.retry-btn')
+      .addEventListener('click', () => location.reload());
   }
 }
 
