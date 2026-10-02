@@ -4,29 +4,90 @@
   <meta charset="utf-8">
   <style>
     body {
-      width: 200px;
-      padding: 10px;
-      font-family: Arial, sans-serif;
+      width: 360px;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
     }
-    
-    button {
+
+    #search {
+      box-sizing: border-box;
       width: 100%;
-      padding: 10px;
+      padding: 10px 12px;
+      border: none;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+      outline: none;
+    }
+
+    #list {
+      list-style: none;
+      margin: 0;
+      padding: 4px 0;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    #list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    #list li .label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #list li .count {
+      flex-shrink: 0;
+      color: #888;
+    }
+
+    #list li.current {
+      color: #999;
+    }
+
+    #list li.highlighted {
       background: #4285f4;
       color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
     }
-    
-    button:hover {
-      background: #3367d6;
+
+    #list li.highlighted .count {
+      color: #e0e0e0;
+    }
+
+    #list li.empty {
+      color: #888;
+      cursor: default;
+    }
+
+    footer {
+      display: flex;
+      gap: 8px;
+      padding: 6px 12px;
+      border-top: 1px solid #ddd;
+      font-size: 12px;
+      color: #888;
+    }
+
+    footer a {
+      margin-left: auto;
+      color: #4285f4;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <button id="openManager">Open Tab Groups Manager</button>
-  <script src="popup.js"></script>
+  <input id="search" type="text" placeholder="Switch to window…" autocomplete="off" spellcheck="false" autofocus>
+  <ul id="list"></ul>
+  <footer>
+    <span id="names-note" hidden>Window names unavailable — see README</span>
+    <a id="open-manager" href="#">Open Tab Groups Manager</a>
+  </footer>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>
