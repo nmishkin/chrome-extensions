@@ -1,0 +1,3 @@
+# Local Chrome debugging setup (VS Code launch config and its browser profile)
+tab-groups/.chrome-debug-profile/
+tab-groups/.vscode/
