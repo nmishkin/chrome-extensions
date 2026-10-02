@@ -23,7 +23,7 @@ class TabGroupsManager {
       const [tabs, tabGroups, windows] = await Promise.all([
         chrome.tabs.query({}),
         chrome.tabGroups.query({}),
-        chrome.windows.getAll()
+        chrome.windows.getAll({ populate: true })
       ]);
 
       // Load stored window origins
@@ -393,13 +393,24 @@ class TabGroupsManager {
   }
 
   isGroupInOwnWindow(windowId, tabs) {
-    // Check if this group is the only thing in its window
+    // Find the window
     const window = this.windows.find(w => w.id === windowId);
-    if (!window) return false;
+    if (!window || !window.tabs) return false;
 
-    // A group is in its own window if the window has exactly the same number of tabs as the group
-    const windowTabCount = window.tabs ? window.tabs.length : 0;
-    return windowTabCount === tabs.length && tabs.length > 0;
+    // Get all tabs in this window
+    const windowTabs = window.tabs;
+
+    // Count grouped vs ungrouped tabs in this window
+    const groupedTabs = windowTabs.filter(tab => tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE);
+    const ungroupedTabs = windowTabs.filter(tab => tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE);
+
+    // A group is in its own window if:
+    // 1. The window has no ungrouped tabs, AND
+    // 2. All grouped tabs belong to this single group (our group's tab count equals all grouped tabs)
+    const hasNoUngroupedTabs = ungroupedTabs.length === 0;
+    const allGroupedTabsBelongToThisGroup = groupedTabs.length === tabs.length && tabs.length > 0;
+
+    return hasNoUngroupedTabs && allGroupedTabsBelongToThisGroup;
   }
 
   async handleTabAction(action, tabId, button) {
