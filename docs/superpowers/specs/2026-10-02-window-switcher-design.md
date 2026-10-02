@@ -79,10 +79,11 @@ Does three things:
    - `chrome.windows.getAll({populate: true, windowTypes: ['normal']})`
    - the MRU list from `chrome.storage.session`
    - `chrome.runtime.sendNativeMessage('com.mishkin.window_switcher', {cmd: 'names'})`
-2. **Render immediately.** Use the window data (active-tab title as the
-   label) as soon as it arrives. When the names arrive, swap them in. If
-   they don't arrive within 500 ms, or the call errors, keep the titles and
-   show a footer note: "Window names unavailable — see README".
+2. **Render.** Wait up to 500 ms for names, then render. The host typically
+   answers in about 250 ms, so waiting avoids titles flickering into names
+   on every open. If the names are late, render titles and swap the names
+   in when they arrive. If the call errors, keep the titles and show a
+   footer note: "Window names unavailable — see README".
 3. **Switch.** `chrome.windows.update(id, {focused: true})`, then
    `window.close()`.
 
@@ -123,7 +124,7 @@ tab-groups.
 |---|---|
 | Host not installed / not allowed | Titles shown, footer note |
 | Automation permission denied | Host returns `{error}`; titles shown, footer note |
-| Host slower than 500 ms | Titles shown, then names swapped in when they arrive |
+| Host slower than 500 ms (e.g. first call, ~800 ms) | Titles shown, then names swapped in when they arrive |
 | Window ID in names but not in API list (or vice versa) | Ignored / falls back to title |
 | Only one window open | List shows it (dimmed, current); harmless |
 
@@ -151,9 +152,8 @@ tab-groups.
 
 ## Open risks
 
-- JXA's stdin/stdout handling of binary data (the length prefixes) needs
-  checking early. If it's awkward, fall back to a small shell wrapper or
-  `python3`.
+- ~~JXA binary framing~~ — resolved 2026-10-02: a prototype read and wrote
+  the length-prefixed messages correctly, including multi-byte names.
 - The Automation prompt may name "osascript" or "Google Chrome" as the
   requesting app depending on how macOS attributes it. This only affects
   the README wording.
