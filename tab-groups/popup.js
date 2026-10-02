@@ -1,7 +1,8 @@
-import { buildEntries, filterEntries, keyAction } from './switcher-core.js';
+import { buildEntries, filterEntries, keyAction, switchWindow, withTimeout } from './switcher-core.js';
 
 const NATIVE_HOST = 'com.mishkin.window_switcher';
 const NAMES_TIMEOUT_MS = 500;
+const NAMES_GIVE_UP_MS = 5000; // stop waiting for a hung host and show the note
 const TIMED_OUT = Symbol('timed out');
 
 const searchEl = document.getElementById('search');
@@ -75,10 +76,11 @@ function render() {
   listEl.children[state.highlight]?.scrollIntoView({ block: 'nearest' });
 }
 
-async function switchTo(entry) {
-  if (!entry) return;
-  await chrome.windows.update(entry.id, { focused: true });
-  window.close();
+function switchTo(entry) {
+  return switchWindow(
+    entry,
+    id => chrome.windows.update(id, { focused: true }),
+    () => window.close());
 }
 
 searchEl.addEventListener('input', () => {
@@ -131,10 +133,7 @@ async function init() {
   state.currentId = current.id;
 
   // Usually names arrive in ~250 ms; waiting avoids titles flickering into names.
-  const early = await Promise.race([
-    namesPromise,
-    new Promise(resolve => setTimeout(() => resolve(TIMED_OUT), NAMES_TIMEOUT_MS)),
-  ]);
+  const early = await withTimeout(namesPromise, NAMES_TIMEOUT_MS, TIMED_OUT);
   if (early !== TIMED_OUT) state.names = early;
   rebuild();
   state.loaded = true;
@@ -146,8 +145,8 @@ async function init() {
   }
 
   if (early === TIMED_OUT) {
-    state.names = await namesPromise;
-    rebuild();
+    state.names = await withTimeout(namesPromise, NAMES_GIVE_UP_MS - NAMES_TIMEOUT_MS, null);
+    if (state.names !== null) rebuild();
   }
   namesNoteEl.hidden = state.names !== null;
 }

@@ -19,8 +19,20 @@ TARGET_DIR="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts
 
 chmod +x "$HOST_PATH"
 mkdir -p "$TARGET_DIR"
-sed -e "s|HOST_PATH|$HOST_PATH|" -e "s|EXTENSION_ID|$EXTENSION_ID|" \
-  "$DIR/$HOST_NAME.json" > "$TARGET_DIR/$HOST_NAME.json"
+# Fill in the template via JSON so any characters in the path are escaped
+# correctly (sed would mangle &, |, \ and ").
+osascript -l JavaScript - "$DIR/$HOST_NAME.json" "$HOST_PATH" "$EXTENSION_ID" \
+  > "$TARGET_DIR/$HOST_NAME.json" <<'EOF'
+ObjC.import('Foundation');
+function run([templatePath, hostPath, extensionId]) {
+  const text = $.NSString.stringWithContentsOfFileEncodingError(
+    templatePath, $.NSUTF8StringEncoding, null).js;
+  const manifest = JSON.parse(text);
+  manifest.path = hostPath;
+  manifest.allowed_origins = [`chrome-extension://${extensionId}/`];
+  return JSON.stringify(manifest, null, 2);
+}
+EOF
 
 echo "Installed $TARGET_DIR/$HOST_NAME.json"
 echo "  host:      $HOST_PATH"

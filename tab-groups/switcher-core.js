@@ -62,6 +62,26 @@ export function keyAction(key, { loaded, highlight, length }) {
   }
 }
 
+// Focuses the chosen window, then closes the popup — even if focusing fails
+// (e.g. the window was closed while the popup was open).
+export async function switchWindow(entry, focus, close) {
+  if (!entry) return;
+  try {
+    await focus(entry.id);
+  } catch (err) {
+    console.warn('Could not switch to window', entry.id, err);
+  } finally {
+    close();
+  }
+}
+
+// Resolves to the promise's value, or to `fallback` if it takes longer than `ms`.
+export function withTimeout(promise, ms, fallback) {
+  let timer;
+  const timeout = new Promise(resolve => { timer = setTimeout(() => resolve(fallback), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export function updateMru(mru, windowId) {
   if (windowId === WINDOW_ID_NONE) return mru;
   return [windowId, ...mru.filter(id => id !== windowId)];

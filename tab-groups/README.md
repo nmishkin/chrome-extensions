@@ -31,8 +31,9 @@ still works but shows each window's current tab title.
    ```
 
 3. Open the switcher. macOS asks for permission to control Google Chrome
-   the first time — allow it. (To change it later: System Settings →
-   Privacy & Security → Automation.)
+   the first time — allow it. The prompt closes the switcher, so press
+   ⌘⇧K again; names appear from then on. (To change it later: System
+   Settings → Privacy & Security → Automation.)
 
 If you move this folder, the extension's ID changes: reload it and rerun
 `install.sh` with the new ID. To remove the helper, run

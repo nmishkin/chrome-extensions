@@ -8,6 +8,8 @@ import {
   updateMru,
   removeFromMru,
   keyAction,
+  switchWindow,
+  withTimeout,
 } from '../switcher-core.js';
 
 // Window with `tabCount` tabs; the first is active and has `title`.
@@ -171,4 +173,36 @@ test('keyAction closes on Escape and ignores other keys', () => {
     { highlight: 0, action: 'close' });
   assert.deepEqual(keyAction('a', { loaded: true, highlight: 1, length: 2 }),
     { highlight: 1, action: null });
+});
+
+// switchWindow
+
+test('switchWindow focuses the window, then closes the popup', async () => {
+  const calls = [];
+  await switchWindow({ id: 7 }, async id => calls.push(`focus ${id}`), () => calls.push('close'));
+  assert.deepEqual(calls, ['focus 7', 'close']);
+});
+
+test('switchWindow still closes the popup when focusing fails', async () => {
+  const calls = [];
+  const focus = async () => { throw new Error('No window with id: 7.'); };
+  await switchWindow({ id: 7 }, focus, () => calls.push('close'));
+  assert.deepEqual(calls, ['close']);
+});
+
+test('switchWindow does nothing without an entry', async () => {
+  const calls = [];
+  await switchWindow(undefined, async () => calls.push('focus'), () => calls.push('close'));
+  assert.deepEqual(calls, []);
+});
+
+// withTimeout
+
+test('withTimeout resolves to the value when it arrives in time', async () => {
+  assert.equal(await withTimeout(Promise.resolve('names'), 50, 'late'), 'names');
+});
+
+test('withTimeout resolves to the fallback when the promise is too slow', async () => {
+  const never = new Promise(() => {});
+  assert.equal(await withTimeout(never, 10, 'late'), 'late');
 });
