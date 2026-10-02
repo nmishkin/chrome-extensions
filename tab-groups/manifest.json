@@ -1,19 +1,29 @@
 {
   "manifest_version": 3,
   "name": "Tab Groups Manager",
-  "version": "1.0",
-  "description": "View and manage all your tab groups in one place",
+  "version": "1.1",
+  "description": "View and manage all your tab groups in one place, and switch between windows by name",
   "permissions": [
     "tabs",
     "tabGroups",
-    "storage"
+    "storage",
+    "nativeMessaging"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Open Tab Groups Manager"
+    "default_title": "Switch window"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "mac": "Command+Shift+K"
+      },
+      "description": "Open the window switcher"
+    }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
