@@ -44,27 +44,36 @@ fetch names. macOS only.
   Enter or click switches to the highlighted window and closes the popup.
   Esc closes the popup.
 - Empty filter result shows "No matching windows".
+- Footer link "Open Tab Groups Manager" opens `manager.html` in a new tab
+  (what the old popup's only button did).
+- Clicking the toolbar icon opens the same popup.
 
 ## Components
 
-All code lives in a new top-level folder `window-switcher/`, alongside
-`tab-groups/`.
+The switcher is added to the existing **`tab-groups/`** extension rather
+than shipped as a new one. Its popup is currently a single button that opens
+the manager, and its background worker is empty, so the switcher takes over
+both. `manager.html` / `manager.js` are unchanged.
 
-### `manifest.json`
-- MV3. Permissions: `tabs`, `storage`, `nativeMessaging`.
-- `action.default_popup: popup.html`.
-- `commands._execute_action` with `suggested_key.mac: "Command+Shift+K"`.
-- A fixed `key` so the extension ID stays the same across unpacked
-  installs — the native host manifest has to name that ID in
-  `allowed_origins`.
+### `manifest.json` (modified)
+- Add permission `nativeMessaging` (already has `tabs`, `tabGroups`,
+  `storage`).
+- `action.default_popup` stays `popup.html`; update `default_title`.
+- Add `commands._execute_action` with
+  `suggested_key.mac: "Command+Shift+K"`.
+- **No fixed `key`.** Adding one would change the extension's existing ID,
+  and Chrome would drop the manager's `groupWindowOrigins` data in
+  `chrome.storage.local`. An unpacked extension's ID is derived from its
+  folder path, so it is already stable while the folder stays put. The
+  installer takes the ID as an argument instead (see `native-host/`).
 
-### `background.js` (service worker)
+### `background.js` (replaced)
 - Listens to `chrome.windows.onFocusChanged` and `onRemoved`. Keeps a
   most-recently-used list of window IDs in `chrome.storage.session` (ignores
   `WINDOW_ID_NONE`).
 - Nothing else.
 
-### `popup.html` / `popup.js`
+### `popup.html` / `popup.js` (replaced)
 Does three things:
 1. **Gather.** In parallel:
    - `chrome.windows.getAll({populate: true, windowTypes: ['normal']})`
@@ -73,8 +82,7 @@ Does three things:
 2. **Render immediately.** Use the window data (active-tab title as the
    label) as soon as it arrives. When the names arrive, swap them in. If
    they don't arrive within 500 ms, or the call errors, keep the titles and
-   show a footer note: "Window names unavailable — run
-   `native-host/install.sh`".
+   show a footer note: "Window names unavailable — see README".
 3. **Switch.** `chrome.windows.update(id, {focused: true})`, then
    `window.close()`.
 
@@ -84,7 +92,7 @@ Does three things:
 - `filterEntries(entries, query)` → filtered and ranked list.
 - Shared by the popup and the unit tests.
 
-### `native-host/`
+### `native-host/` (new, inside `tab-groups/`)
 - `window-names` — the host executable. It's a JXA script
   (`#!/usr/bin/osascript -l JavaScript`), so there's nothing extra to
   install. It reads and discards Chrome's length-prefixed request from
@@ -93,17 +101,21 @@ Does three things:
   replies `{error: "<message>"}`. Read-only: it never changes any window.
 - `com.mishkin.window_switcher.json` — the host manifest template (`path`
   and `allowed_origins` filled in by the installer).
-- `install.sh` — fills in the template with the absolute path and the
-  extension ID, copies it to
+- `install.sh <extension-id>` — fills in the template with the host's
+  absolute path and `chrome-extension://<extension-id>/`, copies it to
   `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`,
-  and makes the host executable. `uninstall.sh` removes it.
+  and makes the host executable. The ID is copied from
+  `chrome://extensions`. Rerun it if the extension folder moves, because
+  the ID changes. `uninstall.sh` removes the manifest.
 - The first use triggers a macOS Automation permission prompt
   (osascript controlling Google Chrome). The README covers this.
 
-### `README.md`
-Install steps: load unpacked, run `install.sh`, approve the Automation
-prompt, and optionally change the shortcut. Also add an entry to the
-top-level README.
+### `README.md` (tab-groups, currently just a title)
+Describe both features: the manager and the window switcher. Window
+switcher setup: copy the extension ID from `chrome://extensions`, run
+`native-host/install.sh <id>`, approve the Automation prompt, and optionally
+change the shortcut. Update the top-level README's one-line description of
+tab-groups.
 
 ## Error handling
 
@@ -125,7 +137,9 @@ top-level README.
 - **Manual:** load unpacked. Check that the shortcut opens the popup, that
   named and unnamed windows are labelled correctly, that filtering and
   arrow keys and Enter work, and that the extension falls back to titles
-  when the host is removed.
+  when the host is removed. Also check that the footer link opens the
+  manager and that the manager's saved data survives the update (same
+  extension ID).
 
 ## Out of scope
 
