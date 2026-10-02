@@ -44,6 +44,24 @@ export function moveHighlight(index, delta, length) {
   return Math.min(Math.max(index + delta, 0), length - 1);
 }
 
+// Decides what a keypress in the search box does. `action` is one of
+// 'move', 'switch', 'defer' (Enter before the list has loaded), 'close',
+// or null (nothing to do).
+export function keyAction(key, { loaded, highlight, length }) {
+  switch (key) {
+    case 'ArrowDown':
+    case 'ArrowUp':
+      return { highlight: moveHighlight(highlight, key === 'ArrowDown' ? 1 : -1, length), action: 'move' };
+    case 'Enter':
+      if (!loaded) return { highlight, action: 'defer' };
+      return { highlight, action: length > 0 ? 'switch' : null };
+    case 'Escape':
+      return { highlight, action: 'close' };
+    default:
+      return { highlight, action: null };
+  }
+}
+
 export function updateMru(mru, windowId) {
   if (windowId === WINDOW_ID_NONE) return mru;
   return [windowId, ...mru.filter(id => id !== windowId)];

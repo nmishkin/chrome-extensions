@@ -7,6 +7,7 @@ import {
   moveHighlight,
   updateMru,
   removeFromMru,
+  keyAction,
 } from '../switcher-core.js';
 
 // Window with `tabCount` tabs; the first is active and has `title`.
@@ -137,4 +138,37 @@ test('updateMru ignores WINDOW_ID_NONE (-1)', () => {
 test('removeFromMru removes the window', () => {
   assert.deepEqual(removeFromMru([1, 2, 3], 2), [1, 3]);
   assert.deepEqual(removeFromMru([1], 5), [1]);
+});
+
+// keyAction
+
+test('keyAction defers Enter until the list has loaded', () => {
+  assert.deepEqual(keyAction('Enter', { loaded: false, highlight: 0, length: 0 }),
+    { highlight: 0, action: 'defer' });
+});
+
+test('keyAction switches on Enter when a row is highlighted', () => {
+  assert.deepEqual(keyAction('Enter', { loaded: true, highlight: 1, length: 3 }),
+    { highlight: 1, action: 'switch' });
+});
+
+test('keyAction ignores Enter when there are no results', () => {
+  assert.deepEqual(keyAction('Enter', { loaded: true, highlight: 0, length: 0 }),
+    { highlight: 0, action: null });
+});
+
+test('keyAction moves the highlight with arrows, clamped', () => {
+  assert.deepEqual(keyAction('ArrowDown', { loaded: true, highlight: 0, length: 2 }),
+    { highlight: 1, action: 'move' });
+  assert.deepEqual(keyAction('ArrowDown', { loaded: true, highlight: 1, length: 2 }),
+    { highlight: 1, action: 'move' });
+  assert.deepEqual(keyAction('ArrowUp', { loaded: true, highlight: 0, length: 2 }),
+    { highlight: 0, action: 'move' });
+});
+
+test('keyAction closes on Escape and ignores other keys', () => {
+  assert.deepEqual(keyAction('Escape', { loaded: true, highlight: 0, length: 2 }),
+    { highlight: 0, action: 'close' });
+  assert.deepEqual(keyAction('a', { loaded: true, highlight: 1, length: 2 }),
+    { highlight: 1, action: null });
 });

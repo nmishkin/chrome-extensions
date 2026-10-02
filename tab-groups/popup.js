@@ -1,4 +1,4 @@
-import { buildEntries, filterEntries, moveHighlight } from './switcher-core.js';
+import { buildEntries, filterEntries, keyAction } from './switcher-core.js';
 
 const NATIVE_HOST = 'com.mishkin.window_switcher';
 const NAMES_TIMEOUT_MS = 500;
@@ -16,6 +16,8 @@ const state = {
   entries: [],
   visible: [],
   highlight: 0,
+  loaded: false,       // true once the list has been rendered with data
+  pendingEnter: false, // Enter pressed before loading finished
 };
 
 // Resolves to the {id: name} map, or null if the host is missing or fails.
@@ -80,25 +82,32 @@ async function switchTo(entry) {
 }
 
 searchEl.addEventListener('input', () => {
+  if (!state.loaded) return; // the first rebuild() applies the query
   state.visible = filterEntries(state.entries, searchEl.value);
   state.highlight = 0;
   render();
 });
 
 searchEl.addEventListener('keydown', event => {
-  switch (event.key) {
-    case 'ArrowDown':
-    case 'ArrowUp':
-      event.preventDefault();
-      state.highlight = moveHighlight(
-        state.highlight, event.key === 'ArrowDown' ? 1 : -1, state.visible.length);
+  const { highlight, action } = keyAction(event.key, {
+    loaded: state.loaded,
+    highlight: state.highlight,
+    length: state.visible.length,
+  });
+  if (action === null) return;
+  event.preventDefault();
+  state.highlight = highlight;
+  switch (action) {
+    case 'move':
       render();
       break;
-    case 'Enter':
-      event.preventDefault();
+    case 'switch':
       switchTo(state.visible[state.highlight]);
       break;
-    case 'Escape':
+    case 'defer':
+      state.pendingEnter = true;
+      break;
+    case 'close':
       window.close();
       break;
   }
@@ -128,6 +137,13 @@ async function init() {
   ]);
   if (early !== TIMED_OUT) state.names = early;
   rebuild();
+  state.loaded = true;
+
+  // ⌘⇧K then Enter in quick succession: switch now that the list exists.
+  if (state.pendingEnter) {
+    switchTo(state.visible[state.highlight]);
+    return;
+  }
 
   if (early === TIMED_OUT) {
     state.names = await namesPromise;
