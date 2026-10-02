@@ -4,4 +4,4 @@ A collection of Chrome browser extensions.
 
 ## Extensions
 
-- **[tab-groups](tab-groups/README.md)** — An extension for managing browser tab groups via a popup and manager UI.
+- **[tab-groups](tab-groups/README.md)** — Manage tab groups, and switch between Chrome windows by name with a keyboard shortcut.

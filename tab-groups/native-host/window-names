@@ -1,0 +1,77 @@
+#!/usr/bin/osascript -l JavaScript
+// Native messaging host for the Tab Groups extension's window switcher.
+// Replies with {names: {"<windowId>": "<name>"}} using Chrome's AppleScript
+// window name (the user-given name, or the active tab title if unnamed).
+// Read-only: never changes any window.
+ObjC.import('Foundation');
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+// JXA has no convenient raw-byte access to NSData, so the 4-byte length
+// prefix goes through base64.
+function bytesToBase64(bytes) {
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const n = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0);
+    out += B64[(n >> 18) & 63] + B64[(n >> 12) & 63] +
+      (i + 1 < bytes.length ? B64[(n >> 6) & 63] : '=') +
+      (i + 2 < bytes.length ? B64[n & 63] : '=');
+  }
+  return out;
+}
+
+function base64ToBytes(str) {
+  const clean = str.replace(/=+$/, '');
+  const bytes = [];
+  for (let i = 0; i < clean.length; i += 4) {
+    const n = (B64.indexOf(clean[i]) << 18) | (B64.indexOf(clean[i + 1]) << 12) |
+      ((B64.indexOf(clean[i + 2]) & 63) << 6) | (B64.indexOf(clean[i + 3]) & 63);
+    bytes.push((n >> 16) & 255);
+    if (i + 2 < clean.length) bytes.push((n >> 8) & 255);
+    if (i + 3 < clean.length) bytes.push(n & 255);
+  }
+  return bytes;
+}
+
+function readMessageLength(handle) {
+  const header = handle.readDataOfLength(4);
+  if (header.length < 4) return -1;
+  const b = base64ToBytes(header.base64EncodedStringWithOptions(0).js);
+  return (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0;
+}
+
+function writeMessage(handle, obj) {
+  const body = $(JSON.stringify(obj)).dataUsingEncoding($.NSUTF8StringEncoding);
+  const n = body.length;
+  const header = $.NSData.alloc.initWithBase64EncodedStringOptions(
+    bytesToBase64([n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >>> 24) & 255]), 0);
+  handle.writeData(header);
+  handle.writeData(body);
+}
+
+function getWindowNames() {
+  const chrome = Application('Google Chrome');
+  const ids = chrome.windows.id();
+  const names = chrome.windows.name();
+  const map = {};
+  ids.forEach((id, i) => { map[String(id)] = names[i]; });
+  return map;
+}
+
+function run(argv) {
+  const stdin = $.NSFileHandle.fileHandleWithStandardInput;
+  const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
+
+  // Read and discard the request; there is only one command.
+  const length = readMessageLength(stdin);
+  if (length > 0) stdin.readDataOfLength(length);
+
+  let reply;
+  try {
+    reply = { names: getWindowNames() };
+  } catch (e) {
+    reply = { error: String(e) };
+  }
+  writeMessage(stdout, reply);
+  // Return nothing so osascript doesn't print a result to stdout.
+}

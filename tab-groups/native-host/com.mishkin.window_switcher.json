@@ -1,0 +1,9 @@
+{
+  "name": "com.mishkin.window_switcher",
+  "description": "Reads Chrome window names for the Tab Groups extension's window switcher",
+  "path": "HOST_PATH",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://EXTENSION_ID/"
+  ]
+}
